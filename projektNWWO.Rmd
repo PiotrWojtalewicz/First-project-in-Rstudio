@@ -1,0 +1,112 @@
+---
+title: Zależność między wskaźnikiem HDI a współczynnikiem zadowolenia i używaniem
+  internetu
+author: ' Piotr Wojtalewicz s56127'
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Spis treści
+
+1.  Cel projektu
+
+2.  Pytania badawcze
+
+3.  Opis wykorzystywanej bazy danych
+
+4.  Wczytywanie wybranych danych do środowiska R
+
+5.  Obróbka danych
+
+6.  HDI z oceną systemów zdrowia i rozwarstwienia społecznego
+
+7.  Zmodyfikowany HDI a współczynnik zadowolenia
+
+8.  Zmodyfikowany HDI a używanie internetu
+
+9.  Podsumowanie
+
+## Cel projektu
+
+Celem projektu jest przeprowadzenie analizy w celu zbadania czy występują zależności między wskaźnikiem HDI a współczynnikiem zadowolenia i użytkowaniem internetu. Dodatkowo współczynnik zadowolenia zależy między innymi od skali korupcji i udzielanej pomocy socjalnej przez państwo - te zależności również zostaną zbadane w ramach projektu.
+
+## Pytania badawcze
+
+1.  Jak kształtuje się rozwój społeczno ekonomiczny uwzgledniając dostęp do internetu, szczęście obywateli?
+
+2.  Czy istnieje związek między liczbą lekarzy a nadmiernymi zgonami?
+
+3.  Czy istnieje jakiś związek pomiędzy wskaźnikami HDI i Giniego?
+
+4.  W jaki sposób uwzględnienie współczynnika Giniego i systemów zdrowia wpłynęło na HDI?
+
+5.  Jak skala korupcji wpływa na zadowolenie ludzi w danym kraju?
+
+6.  Czy występuje zależność pomiedzy współczynnikiem zadowolenia a wskaźnikiem HDI?
+
+7.  Czy występuje zależność pomiędzy odsetkiem ludzi z dostępem do internetu a wskaźnikiem HDI?
+
+## Opis wykorzystywanej bazy danych
+
+Dane wykorzystywane w projekcie pochodzą:
+
+-   ze strony Banku Swiatowego dot długosci życia i GNP
+
+-   z bazy OECD dot zdrowia
+
+-   z bazy Eurostatu dotyczące rozwarstwienia społecznego - współczynnika Giniego
+
+-   dane pobrano z kaggle.com dotyczące:
+
+---\> współczynnika zadowolenia
+
+---\> kosztłw zycia
+
+---\> używania internetu
+
+-   wszystkie dane są z roku 2020
+
+## Wczytywanie danych
+
+Pierwszym krokiem było wczytanie pobranych danych do środowiska Rstudio. Do tego celu wykorzystano polecenie *read.csv()*. Przed rozpoczęciem realizacji projektu konieczna była również instalacja i wczytanie wykorzystywanych pakietów. Wczytywanie realizowano przy pomocy polecenie *library()*.
+
+### Wczytanie danych dotyczących zadowolenia społeczeństw
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(stargazer)
+library(knitr)
+library(kableExtra)
+library(frequency)
+library(gridExtra)
+library(ggstatsplot)
+library(ggside)
+library(patchwork)
+```
+
+```{r}
+happy <- read.csv("C:/Users/piotr/OneDrive/Pulpit/Studia/Analityka gospodarcza/Semestr1/AD/2020.csv", sep = ",", dec = ".")
+```
+
+### Wczytanie danych dotyczących HDI
+
+```{r}
+hdi <- read.csv("C:/Users/piotr/OneDrive/Pulpit/Studia/Analityka gospodarcza/Semestr1/AD/naszedane.csv", sep = ",", dec = ".")
+
+```
+
+### Wczytanie danych dotyczących używania internetu
+
+```{r}
+internet <- read.csv("C:/Users/piotr/OneDrive/Pulpit/Studia/Analityka gospodarcza/Semestr1/AD/broadband-penetration-by-country.csv", sep = ",", dec = ".")
+
+options(digits = 3)
+```
+
