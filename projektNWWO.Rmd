@@ -110,3 +110,133 @@ internet <- read.csv("C:/Users/piotr/OneDrive/Pulpit/Studia/Analityka gospodarcz
 options(digits = 3)
 ```
 
+## Obróbka danych
+
+Następnie w celu ujednolicenia posiadanych danych zmieniono nazwę wybranej kolumny ( z nazwami państw) z odpowiednio Country.name i Entity na Kraj w obu przypadkach - tak by później można byłoby je porównywać. Dodatkowo posortowano wszystkie dane wg nazw państw w kolejności alfabetycznej.
+
+```{r}
+happy <- happy %>%
+  rename(Kraj = Country.name) %>%
+  arrange(Kraj)
+
+hdi <- hdi %>%
+  arrange(Kraj)
+
+internet <- internet %>%
+  rename(Kraj = Entity) %>%
+  arrange(Kraj)
+```
+
+## HDI z oceną systemów zdrowia i rozwarstwienia społecznego
+
+Przy wykorzystaniu pakietów dplyr i ggplot2 zrealizowano 2 wykresy na których pokazano zależność pomiędzy nadmiernymi zgonami a liczbą lekarzy. Do wykreślenia wykresu kolumnowego użyto polecenie *geom_bar()*, natomiast dla wykresu etykietowego - *geom_label()*. Jak widać na poniższych rysunkach im wyższy był wskaźnik lekarzy na 100 tys mieszkańców tym mniej zgonów nadmiarowych występowało w danym kraju - co widać szczególnie po takich krajach jak Norwegia czy Niemcy.
+
+```{r}
+p1 <- hdi %>%
+  filter(hdi$HDI > 0.88) %>%
+  select(Kraj, liczbalekarzy, nadmiarzgon) %>%
+  ggplot(aes(x=nadmiarzgon, y=liczbalekarzy, fill=Kraj)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Kraj), 
+  position = position_dodge(width = 1.5), vjust = -0.2, size = 4) +
+  ylim(0, 5.1) +
+  ggtitle("Zależność między nadmiernymi zgonami a liczbą lekarzy") +
+  theme_bw() +
+  theme(legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid"))
+
+
+p2<- hdi %>%
+  filter(hdi$HDI > 0.88) %>%
+  select(Kraj, liczbalekarzy, nadmiarzgon) %>%
+  ggplot(aes(x=nadmiarzgon, y=liczbalekarzy, label=Kraj, color=Kraj)) +
+  geom_label( size=4) +
+  geom_smooth(method = "lm") +
+  xlim(-30, 580) +
+  ylim(0, 5) +
+  ggtitle("Zależność między nadmiernymi zgonami a liczbą lekarzy") +
+  theme_bw() +
+  theme(legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid"))
+
+grid.arrange(p1, p2, ncol=1)
+```
+
+Zbadano również zależność między wskaźnikiem HDI i rozwarstwieniem społecznym, które jest określane poprzez wyznaczenie współczynnika Giniego. Do przeprowadzenia tego porównania stworzono wykres punktowy przy pomocy *geom_point()*, w którym kolor i wielkość kropek zależą od wartość HDI. W tym przypadku jest trudno wskazać jakąś zależność między HDI a Gini - jednak można powiedzieć, że większość krajów o najwyższym HDI ma również niską wartość współczynnika Giniego - jednak nie należą one do najniższych. Kraje o najniższym współczynniku Gini'ego pochodzą z Europy Środkowo-Wschodniej ( Słowacja, Czechy), gdzie powodu można się doszukiwać w mniejszej migracji do tych państw, co skutkuje nie powstawaniem stref biedy i dużych rozwarstwień między społeczeństwem rodzimym a przybyszami z zagranicy.
+
+```{r}
+ggplot(hdi, aes(x=Kraj, y=Gini, color=HDI, size=HDI)) +
+  geom_point() +
+  ggtitle("Zależność między HDI a rozwarstwieniem") +
+  theme_bw() +
+  theme(legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid")) +
+  coord_flip()
+```
+
+W celu wykonania tabeli w której porównano podstawowe HDI ze zmodyfikowanym HDI dodano do tabeli 4 kolumny w których zapisano odpowiednio wartości obliczonych zmodyfikowanych HDI po uwzględnieniu wskaźnika Gini'ego i systemów zdrowia oraz różnice między zmodyfikowanym i podstawowym HDI. W celu wykorzystania do późniejszego porównania różnych wartości podstawowego i zmodyfikowanych HDI do tabeli również dodano kolumny z etykietami po przez które określono poziom zmian HDI po uwzględniu rozwarstwienia społecznego i poziomu zmodyfikowanego HDI. Ostatecznie tabelę zrealizowano przy pomocy pakietu kableExtra i polecenia *kable()*. Jak widać największą zmianę w HDI zauważono dla Norwegii i Niemiec - co jest zgodne z tym co pokazano wcześniej, gdzie te państwa miały najwięcej współczynnik lekarzy i najmniej nadmiernych zgonów co wpłynęło na ich korzyść podczas oceniania systemów zdrowia. W Polsce wartość HDI praktycznie pozostałą bez zmian na średnim poziomie.
+
+```{r}
+
+calehdi <- hdi %>%
+  mutate(zmodhdi1 = hdi$HDI - hdi$X0.1Gini + hdi$X0.1WZ,
+zmodhdi2 = (hdi$Wzyc * hdi$Wedu * hdi$Wgnp * hdi$WGini * hdi$WZ)^(1/5))
+
+calehdi <- calehdi %>%
+  mutate(rozhdi1 = calehdi$zmodhdi1 - calehdi$HDI,
+rozhdi2 = calehdi$zmodhdi2 - calehdi$HDI)
+
+etykiety1<-c("spadek", "praktycznie bez zmian","mała zmiana","średnia zmiana","duża zmiana")
+etykiety2<-c("niski poziom","średni poziom","wysoki poziom","bardzo wysoki poziom","najwyższy poziom")
+
+calehdi$ocenazmiany <- cut(calehdi$rozhdi1, breaks=c(-10, 0, 0.015, 0.03, 0.04, 0.05) , labels=etykiety1)
+calehdi$ocenazmodhdi1 <- cut(calehdi$zmodhdi1, breaks=c(0, 0.75, 0.81, 0.89, 0.92, 1) , labels=etykiety2)
+calehdi$ocenahdi <- cut(calehdi$HDI, breaks=c(0, 0.75, 0.81, 0.86, 0.89, 1) , labels=etykiety2)
+
+calehdi %>%
+  select(Kraj, HDI, zmodhdi1, zmodhdi2, ocenazmiany, ocenazmodhdi1) %>%
+  arrange(desc(HDI)) %>%
+  rename(ZHDI1 = zmodhdi1, ZHDI2 = zmodhdi2) %>%
+  kable(caption = "Współczyniki podstawowy i zmodyfikowane HDI", digits = 3, escape = FALSE) %>%
+  kable_styling(font_size = 18, position = "left", full_width = FALSE) %>%
+  column_spec(1, bold = TRUE, border_right = TRUE, color = "black", background = "lightgrey") %>%
+  row_spec(c(16), background  = "red") %>%
+  row_spec(c(5), background  = "lightblue") %>%
+  row_spec(c(12), background  = "pink") %>%
+  row_spec(c(1), background  = "lightgreen")
+
+```
+
+Następnie wyznaczono podstawowe wskaźniki statystyczne dla wszystkich zebranych danych. Jak widać w poniższej tabeli średnia wartość HDI wynosi 0.83 ( jest to wartość dość wysoka), średnia liczba lekarzy wynosi 3.92, natomiast średnie zmodyfikowane HDI wzrosło o 0.01, co pokazuje że uzwzględnie rozwarstwienia i systemów zdrowia w większości przypadków wpłynęło bardziej pozytywnie niż negatywnie na HDI wybranych krajów.
+
+```{r}
+stargazer(calehdi[ ,c("HDI", "liczbalekarzy", "WGini", "zmodhdi1")], type = "text", title = "Statystyki dla danych dotyczących HDI", digits = 2)
+```
+
+Wartości podstawowego i zmodyfikowanego wskaźnika HDI pokazano na wykresie kolumnowym przy użyciu polecenie *geom_col().* Jak widać na poniższym rysunkach pozycja takich krajów jak Norwegia czy Finlandia nie uległa zmiania, natomiast największy awans zaliczyi Niemcy z 5 na 2 miejsce. Wśród pozostałych czołowych państw spadki zaliczyły Dania, Holandia, a Austria i Francja zachowały swoją pozycję. Polska w tym rankingu spadła z 12 na 14 miejsce tracąc swoją pozycję na rzecz Portugalii i Słowacji, które mają lepsze odpowiednio opiekę zdrowia i rowarstwienie społeczne.
+
+```{r}
+p3 <- calehdi %>%
+  arrange(HDI) %>%
+  mutate(Kraj=factor(Kraj, levels=Kraj)) %>%
+  ggplot(aes(x=Kraj, y=HDI, fill=HDI)) +
+  geom_col(width=0.7) +
+  ggtitle("Podstawowe HDI") +
+  geom_text(aes(label = HDI), vjust = 0, color = 'black', size = 3) +
+  ylim(0, 1) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.3), legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid"))
+
+p4 <- calehdi %>%
+  arrange(zmodhdi1) %>%
+  mutate(Kraj=factor(Kraj, levels=Kraj)) %>%
+  ggplot(aes(x=Kraj, y=HDI, fill=zmodhdi1)) +
+  geom_col(width=0.7) +
+  ggtitle("Zmodyfikowane HDI") +
+  geom_text(aes(label = zmodhdi1), vjust = -0.1, color = 'black', size = 3) +
+  ylim(0, 1) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.3)) +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.3), legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid"))
+
+grid.arrange(p3, p4, ncol=1)
+```
+
+Pokazano również jak się zmieniłl HDI przy pomocy wykresu punktowego w którym kraje są posortowane według wartości różnicy między zmodyfikowanym a podstawowym HDI. Poniższy wykres potwierdził wcześniejsze wyniki.
