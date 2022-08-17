@@ -240,3 +240,253 @@ grid.arrange(p3, p4, ncol=1)
 ```
 
 Pokazano również jak się zmieniłl HDI przy pomocy wykresu punktowego w którym kraje są posortowane według wartości różnicy między zmodyfikowanym a podstawowym HDI. Poniższy wykres potwierdził wcześniejsze wyniki.
+
+```{r}
+calehdi %>%
+  arrange(rozhdi1) %>%
+  mutate(Kraj=factor(Kraj, levels=Kraj)) %>%
+  ggplot(aes(x=Kraj, y=rozhdi1, size=rozhdi1, color=Kraj)) +
+  geom_point( ) +
+  scale_fill_discrete(name = "Kraj") +
+  xlab('Kraj') +
+  ylab ('Roznica miedzy HDI a zmodyfikowanym HDI') +
+  ggtitle('Roznica miedzy podstawowym HDI a zmodyfikowanym HDI') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.3), legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid"))
+
+```
+
+```{r}
+
+ggbarstats(
+  data=calehdi,
+  x = ocenazmiany,
+  y = ocenahdi
+  )
+```
+
+Za pomocą testów statystycznych chi kwadrat, Persona i V-Cramera zostały przedstawiony na wykresie barowym zmiany jakie nastąpiły w HDI.
+
+```{r}
+ggbarstats(
+  data=calehdi,
+  x = ocenazmodhdi1,
+  y = ocenahdi
+  )
+```
+
+Za pomocą testów statystycznych chi kwadrat, Persona i V-Cramera zostały przedstawione na wykresie barowym zmiany jakie nastąpiły w zmodyfikowanym HDI.
+
+## Zmodyfikowany HDI a współczynnik zadowolenia
+
+```{r}
+etykiety<-c("bardzo niska","niska","średnia","wysoka","bardzo wysoka")
+
+happy$skalakorupcji <- cut(happy$Perceptions.of.corruption, breaks=c(0.1, 0.3, 0.5, 0.7, 0.85, 1.0) , labels=etykiety)
+
+
+happy %>%
+  filter(happy$Regional.indicator=='Western Europe' | happy$Regional.indicator=='Central and Eastern Europe') %>%
+  select(Kraj, Ladder.score, Perceptions.of.corruption, skalakorupcji) %>%
+  arrange(desc(Ladder.score)) %>%
+  rename(Państwo = Kraj, Zadowolenie = Ladder.score, Korupcja= Perceptions.of.corruption) %>%
+  kable(caption = "Współczyniki szczęśliwości i jeden z czyników - korupcja", digits = 3, escape = FALSE) %>%
+  kable_styling(font_size = 18, position = "left", full_width = FALSE) %>%
+  column_spec(1, bold = TRUE, border_right = TRUE, color = "black", background = "lightgrey") %>%
+  row_spec(c(1), background  = "lightgreen") %>%
+  row_spec(c(23), background  = "pink") %>%
+  row_spec(c(37, 38), background  = "red")
+
+```
+
+Powyżej została przedstawiony współczynnik zadowolenia, a skala korupcji. Kolorem zielonym została przedstawiona Finalndia jako kraj z najmniejszą skalą korupcji i największym szczęściem, a kolorem czerwonym Bułgaria i Albani, gdzie skala korupcji jest największa, a zadowolenie obywateli najmniejsze.
+
+```{r}
+happy %>%
+  filter(happy$Regional.indicator=='Western Europe' | happy$Regional.indicator=='Central and Eastern Europe') %>%
+  ggpiestats(
+  x = skalakorupcji,
+  y = Regional.indicator
+)
+```
+
+Dzięki zastosowaniu testu Pearsona oraz Chi- kwadrat udało się stworzyć wykresy kołowe, które przedstawiają skale korupcji w Centralno-Wschodniej części oraz Zachodniej części Europy. W Centralno Wschodnich państwach 76% regionach skala korupcji stoi na bardzo wysokim poziomie, z kolei ta sama skala występuje tylko w 19% państwach Zachodnich. Warto zauważyć, że w państwach Wschodnich i Centralnych nie występuje bardzo niska jak i niska korupcja z kolei w państwach zachodni bardzo niska korupcja występuje w 10% regionów, a niska korupcja w 29% regionów.
+
+```{r}
+etykiety3 <- c("bardzo mała","mała","średnia","duża","bardzo duża")
+etykiety4 <- c("bardzo niski poziom","niski poziom","średni poziom","wysoki poziom")
+
+happy$skalapomocy<- cut(happy$Social.support, breaks=c(0, 0.55, 0.75, 0.85, 0.94, 1.0) , labels=etykiety3)
+
+happy$ocenawolnosci <- cut(happy$Freedom.to.make.life.choices, breaks=c(0.1, 0.4, 0.55, 0.8, 1.0) , labels=etykiety4)
+
+happy %>%
+  filter(happy$Regional.indicator=='Central and Eastern Europe' | happy$Regional.indicator=='Western Europe' | happy$Regional.indicator=='North America and ANZ') %>%
+  ggbarstats(
+  x = skalapomocy,
+  y = Regional.indicator
+)
+```
+
+Za pomocą testów statystycznych Chi-kwadrat, Persona, V-Cramera zostało ukazane za pomocą wykresów barowych skala pomocy socjalnej w poszczególnych regionach świata: Centralno-Wschodnia Europa,Zachodnia Europa, Północna Ameryka i Australia oraz Nowa Zelandia
+
+```{r}
+happy %>%
+  filter(happy$Regional.indicator=='Central and Eastern Europe' | happy$Regional.indicator=='Western Europe' | happy$Regional.indicator=='North America and ANZ') %>%
+  ggbarstats(
+  x = ocenawolnosci,
+  y = Regional.indicator
+)
+```
+
+Za pomocą testów statystycznych Chi-kwadrat, Persona, V-Cramera zostało ukazane za pomocą wykresów barowych ocena wolności w poszczególnych regionach świata: Centralno-Wschodnia Europa, Zachodnia Europa, Północna Ameryka i Australia oraz Nowa Zelandia
+
+```{r}
+
+happy %>%
+  filter(happy$Regional.indicator=='Western Europe' | happy$Regional.indicator=='Central and Eastern Europe') %>%
+  arrange(Ladder.score) %>%
+  mutate(Kraj=factor(Kraj, levels=Kraj)) %>%
+  ggplot( aes(x=Kraj, y=Ladder.score, fill=Regional.indicator)) +
+  geom_bar(stat='identity') +
+  theme_bw() +
+  theme(legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid")) +
+  xlab('Państwo') +
+  ylab ('Współczynnik zadowolenia') +
+  scale_fill_discrete(name = "Region") +
+  coord_flip() +
+  facet_wrap(~ Regional.indicator)
+```
+
+Powyżej został przedstawiony wykres przedstawiający ogólne zadowolenie mieszkańców w pańśtwach Europy Zachodniej i Europy Centralno-Wschodniej. Wyraźnie widać, że obywatele mieszkający w zachodniej części Europy są bardziej uszczęśliwieni niż obywatele mieszkający w drugim typie państw europejskich. Najbardziej szczęśliwymi mieszkańcami są osoby przebywające w Finlandii natomiast najmniej w Bułgarii i Macedonii.
+
+```{r}
+etykiety5 = c('<0.749', '0.75-0.799', '0.80-0.849', '0.85-0.899', '0.90-1')
+etykiety6 = c('<0.779', '0.78-0.849', '0.85-0.919', '0.92-1')
+etykiety7 = c('<6.49', '6.5-6.99', '7-7.49', '>7.5')
+
+
+happy1 <- happy %>% inner_join(calehdi %>%
+                                 select(Kraj, HDI, zmodhdi1), by="Kraj")
+  
+happy1$hdi <- cut(happy1$HDI, breaks=c(0, 0.75, 0.80, 0.85, 0.9, 1.0) , labels=etykiety5) 
+happy1$zmodhdi1 <- cut(happy1$zmodhdi1, breaks=c(0, 0.78, 0.85, 0.92, 1.0) , labels=etykiety6)
+happy1$wspzadowol <- cut(happy1$Ladder.score, breaks=c(0, 6.5, 7, 7.5, 10) , labels=etykiety7)
+```
+
+Za pomocą Chi-kwadrat, testu Pearsona i V-Cramera zostały przedstawione współczynniki zadowolenia oraz HDI na wykresach kołowych.
+
+```{r}
+ggpiestats(
+  happy1,
+  x = wspzadowol,
+  y = hdi
+)
+```
+
+Za pomocą Chi-kwadrat, testu Pearsona i V-Cramera zostały przedstawione współczynniki zadowolenia oraz HDI na wykresach kołowych.
+
+```{r}
+ggpiestats(
+  happy1,
+  x = wspzadowol,
+  y = zmodhdi1
+)
+```
+
+Za pomocą Chi-kwadrat, testu Pearsona i V-Cramera zostały przedstawione współczynniki zadowolenia oraz zmodyfikowane HDI na wykresach kołowych.
+
+## Zmodyfikowany HDI a używanie internetu
+
+```{r}
+internet %>%
+  filter(Year==2007 | Year==2012 | Year==2016 | Year==2019) %>%
+  ggbetweenstats(
+  x = Year,
+  y = Fixed.broadband.subscriptions..per.100.people.
+)
+```
+
+Powyższy wykres przedstawia jak dostęp do internetu wpływał na zmodyfikowany wskaźnik rozwoju społeczno ekonomicznego w 2007, 2012, 2016 oraz 2019 roku. Można dostrzec, że wraz z wzrostem jakości i powszechności technologii jakim jest Internet z okresu na okres zmodyfikowane HDI rośnie. Dodatkowo w ostatnim analizowanym czasie pojedyńcze kraje uzyskały największy odsetek pernamentnego połączenia z siecią. Do uzyskania powyższych wykresów został zastosowany test t- Welcha.
+
+```{r}
+sd=0.5
+
+internet %>%
+  filter(Kraj=="European Union"| Kraj=="East Asia & Pacific" | Kraj=="North America" | Kraj=="Latin America & Caribbean" | Kraj=="Middle East & North Africa" | Kraj=="South Asia") %>%
+  ggplot(aes(x=Year, y=Fixed.broadband.subscriptions..per.100.people., group=Kraj)) +
+  geom_boxplot(alpha=0.5) +
+  stat_summary(fun="mean", geom="point", shape=20, size=4, color="darkblue") +
+  facet_wrap(~Kraj, ncol=3) +
+  scale_fill_discrete(name = "Kraj") +
+  xlab('Rok') +
+  ylab ('liczba podłączeń internetu na 100 osób') +
+  ggtitle('Użytkowanie internetu wg kontynentów') +
+  theme_bw()
+
+```
+
+Powyższe wykresy przedstawiają liczbę użytkowników jaka miała dostęp do internetu w poszczególnych regionach świata przypadające na 100 osób w 2020 roku. Nie trudno zauważyć, że najcześciej z internetu korzystały osoby zamieszkałe Unie Europejską oraz północną Amerykę. Zdecydowanie najmniejszy odsetek ludności stale połączonych z siecią znajdował się w południowej części Afryki
+
+```{r}
+sd=0.5
+
+internet %>%
+  filter(Kraj=="Poland"| Kraj=="Germany" | Kraj=="France" | Kraj=="Czechia" | Kraj=="Hungary" | Kraj=="Spain") %>%
+  ggplot(aes(x=Year, y=Fixed.broadband.subscriptions..per.100.people., group=Kraj)) +
+  geom_line(aes(color=Kraj)) +
+  geom_point(aes(color=Kraj, shape=Kraj)) +
+  geom_errorbar(aes(ymin=Fixed.broadband.subscriptions..per.100.people.-sd, ymax=Fixed.broadband.subscriptions..per.100.people.+sd), width=.1) +
+  facet_wrap(~Kraj, ncol=3) +
+  scale_fill_discrete(name = "Kraj") +
+  xlab('Rok') +
+  ylab ('liczba podłączeń internetu na 100 osób') +
+  ggtitle('Użytkowanie internetu w wybranych panstwach UE') +
+  theme_bw() +
+  theme(legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid"))
+```
+
+Z kolei na powyższym wykresie można zauważyć jak na przestrzeni ostatnich lat kształtował się dostęp do internetu w poszczególnych krajach europejskich. Najwyższym wskaźnikiem w 2020 roku z przedstawionych państw mogła się poszczycić Francja oraz Niemcy, najmniejszym zaś Polska.
+
+```{r}
+internet1 <- internet %>% inner_join(happy1 %>%
+                                 select(Kraj, hdi, zmodhdi1), by="Kraj")
+```
+
+```{r}
+internet1 %>%
+  filter(Year==2019) %>%
+  arrange(Fixed.broadband.subscriptions..per.100.people.) %>%
+  mutate(Kraj=factor(Kraj, levels=Kraj)) %>%
+  ggplot(aes(x=Kraj, y=Fixed.broadband.subscriptions..per.100.people., color=hdi, shape=hdi)) +
+  geom_point(size=3) +
+  theme_bw() +
+  xlab('Kraj') +
+  ylab('Odsetek podłączenia do sieci w wybranych krajach') +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.3), legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid")) +
+  ggtitle('Zależność między podstawowym HDI a używaniem internetu')
+
+```
+
+Na powyższym wykresie widać jak w 2020 roku kształtowała się zależność między dostępem do internetu a podstawowym HDI. Mimo najwyższego odsetka ludzi podłączonych do sieci w Francji to w Niemczech i w Norwegii miało miejsce największa wartość wskaźnika rozwoju społeczno ekonomicznego. Oznacza to, że w tych pańśtwach obywatele wykorzystali do maksimum możliwości dostęp do Internetu i udało im się zanotowań największy wzrost HDI
+
+```{r}
+internet1 %>%
+  filter(Year==2019) %>%
+  arrange(Fixed.broadband.subscriptions..per.100.people.) %>%
+  mutate(Kraj=factor(Kraj, levels=Kraj)) %>%
+  ggplot(aes(x=Kraj, y=Fixed.broadband.subscriptions..per.100.people., fill=zmodhdi1)) +
+  geom_col() +
+  theme_bw() +
+  xlab('Kraj') +
+  ylab('Odsetek podłączenia do sieci w wybranych krajach') +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.3), legend.background = element_rect(fill="lightgrey", size=0.5, linetype="solid")) +
+  ggtitle('Zależność między zmodyfikowanym HDI a używaniem internetu') +
+  labs(fill = 'Wartość HDI')
+```
+
+Powyższy wykres właśnie potwierdza to co zosatało przedstawione wcześniej. Największy dostęp do Internetu mieli obywatele Francji, Danii oraz Niderlandów. Natomiast największy wzost HDI spowodowanego dzięki dostępności do sieci miało miejsce w Niemczech oraz Norwegii. Polska w tym zestawieniu znajduje się na ostatnim miejscu względem dostępnosci Internetu dla obywateli. Dodatkowo też wzrost wskaźnika HDI był na relatywnie niskim poziomie.
+
+## Podsumowanie
+
+Najlepsze rezutlaty udało się zauważyć jak dostęp do Internetu wśród obywateli ma wpływ na szczęście oraz (w osobnym badaniu) na wzrost wskaźnika HDI. Nie trudno było zauważyć, dodatnią korelacje między użytkowaniem z sieci, a szczęściem mieszkańców oraz zmianami występującymi w wskaźniku rozwoju społeczno ekonomicznego. Ponadto doskonale po szczęściu obywateli widać jakie kraje mają problem z zbyt dużym występowaniem korupcji. Warto się przyjrzeć róWnież jak wygląda korelacja między współczynnikiem HDI a Ginim. Wraz z wysokim wspólczynnikiem rozwoju społeczno ekonomicznego występuje niski współczynnik nierówności dochodów w analizowanym okresie. Ocena systemu zdrowia wykazała, że liczba lekarzy jest ujemnie skorelowana z nadmiarowymi zgonami w regionach (czym więcej lekarzy tym mniej zgonów).
